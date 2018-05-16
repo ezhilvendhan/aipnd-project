@@ -29,9 +29,7 @@ def parse_args():
 
     args = parser.parse_args()
     if len(args.hidden_units) == 0:
-        args.hidden_units = [1024, 400, 102]
-    if args.arch == 'densenet121':
-        args.gpu = True
+        args.hidden_units = [400]
 
     print()
     print("Starting to train using these inputs")
@@ -52,8 +50,7 @@ def load_data(data_dir):
     train_dir = data_dir + '/train'
     valid_dir = data_dir + '/valid'
 
-    train_data_transforms = transforms.Compose([transforms.Resize(225),
-                                                transforms.RandomRotation(30),
+    train_data_transforms = transforms.Compose([transforms.RandomRotation(30),
                                                 transforms.RandomResizedCrop(224),
                                                 transforms.RandomHorizontalFlip(),
                                                 transforms.ToTensor(),
@@ -79,18 +76,17 @@ def get_loader(train_image_data, valid_image_data):
 
     return train_loader, valid_loader
 
+
 def create_classifier(hidden_units):
   layers = []
   total = len(hidden_units)
-  if total < 2:
-    raise("Invalid number of input layers. Has to be more than 1")
   for idx, features in enumerate(hidden_units):
-    if (idx+1 == total):
+    if idx+1 == total:
       layers.append(('output', nn.LogSoftmax(dim=1)))
     else:
       name = 'fc'+str(idx+1)
       layers.append((name, nn.Linear(features, hidden_units[idx+1])))
-      if (idx+2 < total):
+      if idx+2 < total:
         relu_name = 'relu'+str(idx+1)
         dropout_name = 'dropout'+str(idx+1)
         layers.append((relu_name, nn.ReLU()))
@@ -107,6 +103,8 @@ def create_model(arch, hidden_units):
     model = getattr(models, arch)(pretrained=True)
     for param in model.parameters():
         param.requires_grad = False
+    hidden_units.insert(0, model.classifier.in_features)
+    hidden_units.append(102)
     classifier = create_classifier(hidden_units)
     model.classifier = classifier
     return model

@@ -82,6 +82,11 @@ def process_image(img):
     """ Scales, crops, and normalizes a PIL image for a PyTorch model,
         returns an Numpy array
     """
+    width, height = img.size
+    if width > height:
+        img.thumbnail((height, 256), Image.ANTIALIAS)
+    else:
+        img.thumbnail((256, width), Image.ANTIALIAS)
     half_the_width = img.size[0] / 2
     half_the_height = img.size[1] / 2
     img = img.crop((
