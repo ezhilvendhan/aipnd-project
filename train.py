@@ -1,3 +1,4 @@
+#python train.py ../aipnd-project/flowers --gpu --save_dir checkpoint_d121.pth
 import argparse
 
 import torch
@@ -103,7 +104,11 @@ def create_model(arch, hidden_units):
     model = getattr(models, arch)(pretrained=True)
     for param in model.parameters():
         param.requires_grad = False
-    hidden_units.insert(0, model.classifier.in_features)
+    if type(model.classifier) is torch.nn.modules.container.Sequential:
+        inp_features = model.classifier[0].in_features
+    else:
+        inp_features = model.classifier.in_features
+    hidden_units.insert(0, inp_features)
     hidden_units.append(102)
     classifier = create_classifier(hidden_units)
     model.classifier = classifier
